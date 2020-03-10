@@ -27,6 +27,9 @@ source $(dirname ${BASH_SOURCE[0]})/../case-lib/lib.sh
 OPT_OPT_lst['t']='tplg'     OPT_DESC_lst['t']='tplg file, default value is env TPLG: $TPLG'
 OPT_PARM_lst['t']=1         OPT_VALUE_lst['t']="$TPLG"
 
+OPT_OPT_lst['m']='mode'    OPT_DESC_lst['m']='pipeline order mode, just support playback/capture'
+OPT_PARM_lst['m']=1         OPT_VALUE_lst['m']='playback'
+
 OPT_OPT_lst['c']='count'    OPT_DESC_lst['c']='test pipeline count'
 OPT_PARM_lst['c']=1         OPT_VALUE_lst['c']=4
 
@@ -52,6 +55,15 @@ max_count=0
 # get the min value of TPLG:'pipeline count' with Case:'pipeline count'
 [[ $PIPELINE_COUNT -gt ${OPT_VALUE_lst['c']} ]] && max_count=${OPT_VALUE_lst['c']} || max_count=$PIPELINE_COUNT
 func_lib_setup_kernel_last_line
+
+declare - a type_seq
+if [ "${OPT_VALUE_lst['m']}" == "playback" ]; then
+    type_seq[0]="playback"  type_seq[1]="capture"
+elif [ "${OPT_VALUE_lst['m']}" == "capture" ]; then
+    type_seq[0]="capture"   type_seq[1]="playback"
+else
+    dlogw "Error alsa application type: ${OPT_VALUE_lst['m']}"
+fi
 
 # now small function define
 declare -A APP_LST DEV_LST
@@ -107,8 +119,8 @@ do
     sudo dmesg -C
 
     # start capture:
-    func_run_pipeline_with_type "capture"
-    func_run_pipeline_with_type "playback"
+    func_run_pipeline_with_type "${type_seq[0]}"
+    func_run_pipeline_with_type "${type_seq[1]}"
 
     dlogi "pipeline start sleep 0.5s for device wakeup"
     sleep ${OPT_VALUE_lst['w']}
@@ -145,7 +157,6 @@ do
     [[ $? -eq 1 ]] && func_error_exit "Catch the abnormal process status of arecord"
     sof-process-state.sh aplay >/dev/null
     [[ $? -eq 1 ]] && func_error_exit "Catch the abnormal process status of aplay"
-
 
     # kill all arecord
     pkill -9 arecord
