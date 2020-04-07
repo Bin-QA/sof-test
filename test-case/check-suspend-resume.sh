@@ -51,6 +51,9 @@ if [ "$type" ]; then
 fi
 dlogi "Current suspend/resume type mode: $(cat /sys/power/mem_sleep)"
 
+# /dev/rtc0 is rtcwake -d option default value
+[[ ! -c /dev/rtc0 ]] && dlogw "Miss /dev/rtc0 file for the rtcwake command" && exit 2
+
 loop_count=${OPT_VALUE_lst['l']}
 declare -a sleep_lst wait_lst
 
